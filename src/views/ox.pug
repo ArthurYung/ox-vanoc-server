@@ -1,0 +1,610 @@
+extends base.pug
+
+block styles
+  style(type="text/css").
+    .icon svg {
+      animation: connectAnimate .7s infinite
+    }
+    .history {
+      padding: 12px;
+      box-sizing: border-box;
+    }
+    .history-title {
+      padding: 12px;
+      padding-bottom: 0;
+      font-size: 18px;
+    }
+    .history-item {
+      width: 100%;
+      height: 48px;
+      line-height: 48px;
+      border-radius: 4px;
+      font-size: 16px;
+      background-color: #fff;
+      box-shadow: 2px 2px 4px rgba(0, 0, 0, .3);
+      display: flex;
+      box-sizing: border-box;
+      padding: 0 24px;
+      justify-content: space-between;
+      animation: appendHistory .5s;
+      color: #111;
+      margin-bottom: 6px;
+    }
+    .history-item:active {
+      background-color: #f5ff96
+    }
+    .history-item::after {
+      content: attr(data-status);
+      font-size: 12px;
+      color: #666;
+    }
+    .history-item[data-status="Done"]::after {
+      color: green;
+    }
+    .image-view {
+      position: fixed;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      transition: all .5s ease-out;
+      -webkit-transition: all .5s ease-out;
+      z-index: 900;
+      overflow-y: auto;
+      animation: openImage .5s; 
+      background: #000;
+    }
+    .image-title {
+      width: 100%;
+      background: #000;
+      color: #fff;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .image-view img {
+      display: block;
+      width: 92%;
+      margin: 12px auto;
+    }
+    .hidden {
+      transform: translate3d(0, -50%, 0) scale(0);
+      -webkit-transform: translate3d(0, -50%, 0) scale(0);
+    }
+    
+    @keyframes connectAnimate {
+      0% {
+        -webkit-transform: scale(1.15);
+        transform: scale(1.15);
+      }
+
+      20% {
+        -webkit-transform: scale(1);
+        transform: scale(1);
+      }
+
+      100% {
+        -webkit-transform: scale(1.15);
+        transform: scale(1.15);
+      }
+    }
+
+    @keyframes appendHistory {
+      from {
+        opacity: 0;
+        transform: translate3d(-100px, 0, 0);
+        -webkit-transform: translate3d(-100px, 0, 0);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+        -webkit-transform: translate3d(0, 0, 0);
+      }
+    }
+
+    @keyframes openImage {
+      from {
+        opacity: 0;
+        transform: translate3d(0, -100px, 0);
+        -webkit-transform: translate3d(0, -100px, 0)
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0,0, 0);
+        -webkit-transform: translate3d(0, 0, 0)
+      }
+    }
+
+block icon
+  svg(xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20")
+    circle(
+      fill="none"
+      cx="10"
+      cy="10"
+      r="7"
+      stroke="#000"
+      stroke-width="6"
+    )
+
+block main
+  div#content.content
+  div.history-title HISTORY
+  div#history.history
+
+block scripts
+  script.
+    const $history = document.getElementById('history')
+    // 上滑事件
+    const onMoveUp = (el, callback) => {
+      let startY = 0
+      let currentY = 0
+      let start = false
+      let moved = false
+      let moveTimeout
+      const startMoveTimeout = () => {
+        clearTimeout(moveTimeout)
+        moveTimeout = setTimeout(() => {
+          start = false
+          moved = false
+        }, 300)
+      }
+      el.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].pageY
+        start = true
+        startMoveTimeout()
+      })
+      el.addEventListener('touchmove', (e) => {
+        currentY = e.touches[0].pageY
+        moved = true
+        startMoveTimeout()
+      })
+      el.addEventListener('touchend', () => {
+        console.log(currentY, startY)
+        if (startY - currentY > 100 && moved) {
+          callback()
+        }
+      })
+    }
+
+
+    // 判断是否是微信（貌似没啥用了）
+    const isWeixin = function () { //判断是否是微信
+        const ua = navigator.userAgent.toLowerCase();
+        return ua.match(/MicroMessenger/i) == "micromessenger";
+    };
+
+    // 添加一个history list元素
+    const appendHistory = (type, status, clickCb) => {
+      const itemNode = document.createElement('div')
+      itemNode.className = 'history-item'
+      itemNode.dataset.status = status ? 'Done' : 'Copy'
+      itemNode.innerText = type === 'image' ? '来自PC的图片' : '来自PC的文本'
+      itemNode.addEventListener('click', () => {
+        clickCb(itemNode)
+      })
+      const firstChild = $history.children[0]
+      if (firstChild) {
+        $history.insertBefore(itemNode, firstChild)
+      } else {
+        $history.appendChild(itemNode)
+      }
+    }
+
+    // 尝试直接用navigator clipboard api来复制文本；无需用户手动点击
+    const tryCopyText = (str) => {
+      return new Promise((resolve) => {
+        if (!navigator.clipboard) {
+          resolve(false)
+        } else {
+          navigator.clipboard.writeText(str).then(() => {
+            resolve(true)
+          }).catch((e) => {
+            resolve(false)
+          })
+        }
+      })
+    }
+
+    let textArea
+
+    const isOS = () => {
+        return navigator.userAgent.match(/ipad|iphone/i);
+    }
+
+    const createTextarea = (text) => {
+        textArea = document.createElement('textArea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+    }
+
+
+    const selectText = () => {
+        let range,
+            selection;
+
+        if (isOS()) {
+            range = document.createRange();
+            range.selectNodeContents(textArea);
+            selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            textArea.setSelectionRange(0, 999999);
+        } else {
+            textArea.select();
+        }
+    }
+
+    const copyToClipboard = () => {        
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+    }
+
+    // 复制文本
+    const copyText = (text) => {
+      try {
+        createTextarea(text)
+        selectText()
+        copyToClipboard()
+        return true
+      } catch (e) {
+        alert('复制失败：', e)
+        console.log(e)
+      }
+
+      return false
+    }
+
+    // 分段接收的监听主体数据
+    const bufferWatcherConstructor = {
+      maxLength: 0,
+      buffers: [],
+      type: 'image/jpeg',
+      onsuccess: () => {}
+    }
+
+    // 初始化buffer分段接收
+    const startBufferWatcher = (num, type, onsuccess) => {
+      bufferWatcherConstructor.maxLength = num
+      bufferWatcherConstructor.buffers = []
+      bufferWatcherConstructor.type = type
+      bufferWatcherConstructor.onsuccess = onsuccess
+    }
+
+    // 接收分段buffer数据
+    const putImageBuffer = (buffer) => {
+      bufferWatcherConstructor.buffers.push(buffer)
+      console.log(bufferWatcherConstructor.buffers.length)
+      // 达到最大数时调用onsuccess回调
+      if (bufferWatcherConstructor.buffers.length >= bufferWatcherConstructor.maxLength) {
+        bufferWatcherConstructor.onsuccess(bufferWatcherConstructor)
+      }
+    }
+
+    // 组合分段buffer为一个buffer
+    const concatBuffers = (buffers) => {
+        let sumLength = 0;
+        for(let i = 0; i < buffers.length; ++i){
+            sumLength += buffers[i].byteLength;
+        }
+
+        const bufferView = new Uint8Array(sumLength);
+        let pos = 0;
+        for(let i = 0; i < buffers.length; ++i){
+            bufferView.set(new Uint8Array(buffers[i]),pos);
+            pos += buffers[i].byteLength;
+        }
+        return bufferView;
+    }
+
+    // 复制buffer图片
+    const createImageBufferCopy = (context) => {
+      const imageBuffer = concatBuffers(context.buffers)
+      const imageBlob = new Blob([ imageBuffer ], { type: context.type })
+      const urlCreator = window.URL || window.webkitURL;
+      const imageUrl = urlCreator.createObjectURL( imageBlob );
+      const img = new Image();
+      img.src = imageUrl;
+      
+      function showCopyImage() {
+        const viewBox = document.createElement('div')
+        const text = document.createElement('div')
+        text.className = 'image-title'
+        text.innerHTML = '您的浏览器不支持直接copy图片<br/>请长按图片保存，或上滑返回列表'
+        viewBox.className = 'image-view'
+        viewBox.appendChild(text)
+        viewBox.appendChild(img)
+        document.body.appendChild(viewBox)
+
+        onMoveUp(viewBox, () => {
+          viewBox.className += ' hidden'
+          setTimeout(() => {
+            document.body.removeChild(viewBox)
+          }, 500)
+        })
+      }
+
+      showCopyImage()
+      appendHistory('image', false, showCopyImage)
+    }
+
+    function WebsocketConstructor() {
+      this.ws = null
+      this.initSocket()
+    }
+
+    WebsocketConstructor.prototype.initSocket = function () {
+      const pro = window._NODE_ENV === 'prod' ? 'wss://' : 'ws://'
+      const ws = new WebSocket(pro + apiHost + '/ws/?uid=' + window._BASE_UID_ + '&type=mobile')
+      ws.onopen = () => {
+        window.__CONNECTED__ = true
+        ws.binaryType = 'arraybuffer'
+        ws.send('[connected]1')
+      }
+
+      ws.onmessage = (e) => {
+        console.log(e.data)
+        if (event.data instanceof ArrayBuffer) {
+          putImageBuffer(event.data)
+          ws.send('[info]0')
+          return
+        }
+
+        const dataParsed = event.data.match(/(\[.+?\])(.+)$/)
+        const type = dataParsed ? dataParsed[1] : ''
+        const content = dataParsed ? dataParsed[2] : ''
+
+        if (type === '[connect]') {
+          console.log('connected success')
+          ws.send('[connect]2')
+          pageLoading.setText('连接成功!')
+          pageLoading.done()
+          return
+        }
+
+        // 如果是buffer类型，启动buffer监听
+        if (type === '[buffer]') {
+          const [contentType, length] = content.split(':')
+          startBufferWatcher(Number(length), contentType, createImageBufferCopy)
+          return
+        }
+
+        if (type === '[text]') {
+          const text = content.replace(/\\n/g, '\n')
+          tryCopyText(text).then((res) => {
+            appendHistory('text', res, (el) => {
+              copyText(text) && (el.dataset.status = 'Done')
+            })
+          })
+          return
+        }
+      }
+
+      ws.onclose = (e) => {
+        errorMessage('连接已断开')
+      }
+
+      ws.onerror = (e) => {
+        console.log('connect error', e)
+      }
+
+      this.ws = ws
+    }
+
+    // 开始webrtc连接
+    function startConnection() {
+      const pc = new RTCPeerConnection(options);
+
+      let heartListenerTimeout
+      let heartSendInterval
+      let connectHolder = false
+
+      // 初始化心跳包监听，5秒无应答做断开处理
+      function startHeartListener() {
+        if (connectHolder) return
+        clearTimeout(heartListenerTimeout)
+        heartListenerTimeout = setTimeout(() => {
+          errorMessage('<div onclick="reloadPage()">连接已中断, 点击尝试重连</div>')
+        }, 5000)
+      }
+
+      function addHolderListener(hiddenCb, visibleCb) {
+        document.addEventListener('visibilitychange', () => {
+          if (!window.__CONNECTED__) return
+          if (document.visibilityState === 'hidden') {
+            connectHolder = true
+            clearTimeout(heartListenerTimeout)
+            hiddenCb()
+          } else if (document.visibilityState === 'visible') {
+            connectHolder = false
+            visibleCb()
+          }
+        })
+      }
+
+      let currentRemoteCandidates = []
+      function addIceCandidate(candidate) {
+        pc.addIceCandidate(new nativeRTCIceCandidate(candidate))
+      }
+
+      function filterRemoteCandidates(candidates) {
+        const usefulIceCandidates = candidates.filter(
+          candidate => !currentRemoteCandidates.find(remote => remote.candidate === candidate.candidate)
+        )
+        usefulIceCandidates.forEach(candidate => addIceCandidate(candidate))
+        currentRemoteCandidates = candidates
+      }
+
+      // 轮询pc端的配置数据
+      function loopFetchRemote () {
+        getJson('check').then(res => {
+          if (window.__CONNECTED__) {
+            return
+          }
+
+          if (res.data.upgrade) {
+            console.log('切换至websocket连接')
+            return
+          }
+
+          if (res.code !== 0) {
+            errorMessage('连接失败:(1)\n' + res.message)
+            return
+          }
+
+          // 如果pc端已初始化ice 服务器地址，设置后停止轮询
+          if (res.data.candidate1) {
+            filterRemoteCandidates(res.data.candidate1)
+            //- pc.addIceCandidate(new nativeRTCIceCandidate(res.data.candidate1))
+          }
+          
+          setTimeout(() => {
+            loopFetchRemote()
+          }, 1000)
+        })
+      }
+    
+      pc.ondatachannel = function (event) {
+        console.log('on data start')
+        const channel = event.channel;
+        // 数据连接打开时回调
+        channel.onopen = function(event) {
+          window.__CONNECTED__ = true
+          channel.send('[connect]0');
+          postJson('update', { status: 4 })
+
+          // 数据建立连接后发送心跳包，并更新状态
+          heartSendInterval = setInterval(() => {
+            channel.send('[heart]0')
+          }, 1000)
+
+          addHolderListener(
+            () => channel.send('[holder]0'),
+            () => channel.send('[connect]0')
+          )
+        }
+
+        // 接收到数据的回调
+        channel.onmessage = function(event) {
+          if (event.data instanceof ArrayBuffer) {
+            putImageBuffer(event.data)
+            channel.send('[info]0')
+            return
+          }
+
+          const dataParsed = event.data.match(/(\[.+?\])(.+)$/)
+          const type = dataParsed ? dataParsed[1] : ''
+          const content = dataParsed ? dataParsed[2] : ''
+
+          // 如果是buffer类型，启动buffer监听
+          if (type === '[buffer]') {
+            const [contentType, length] = content.split(':')
+            startBufferWatcher(Number(length), contentType, createImageBufferCopy)
+            return
+          }
+
+          if (type === '[connect]') {
+            startHeartListener()
+            pageLoading.setText('连接成功!')
+            pageLoading.done()
+            return
+          }
+          
+          if (type === '[heart]') {
+            startHeartListener()
+            return
+          }
+
+          if (type === '[text]') {
+            const text = content.replace(/\\n/g, '\n')
+            tryCopyText(text).then((res) => {
+              appendHistory('text', res, (el) => {
+                copyText(text) && (el.dataset.status = 'Done')
+              })
+            }).catch(err => {
+              console.log(err)
+            })
+            return
+          }
+        }
+      }
+
+      let hasIcecandidate = false
+      let checkConnectTimeout
+      // 本地发现ice服务器
+      pc.onicecandidate = function (e) {
+        if (e.candidate) {
+          // candidate2: e.candidate
+          postJson('update', { candidate2: e.candidate }).then(res => {
+            if (res.code !== 0) {
+              errorMessage( '连接失败:(2)\n' + res.message)
+              return
+            }
+
+            clearTimeout(checkConnectTimeout)
+            checkConnectTimeout = setTimeout(() => {
+              // 5秒后如果还是连接失 除当前cookie
+              //- if (true) {
+              if (!window.__CONNECTED__) {
+                postJson('update', {
+                  upgrade: 1
+                }).then(res => {
+                  clearTimeout(heartListenerTimeout)
+                  clearInterval(heartSendInterval)
+                  pageLoading.setText('切换为websocket模式...')
+                  pc.close()
+                  switchWebsocket()
+                  new WebsocketConstructor()
+                })
+              }
+            }, 10000)
+          }).catch(err => {
+            errorMessage('接口错误:\n' + res.message)
+          })
+        }
+      }
+
+      // 将服务器中的offer配置设置到远端remote
+      pc.setRemoteDescription(new RTCSessionDescription({ 
+        type: 'offer',
+        sdp: window._OFFER_SDP_
+      })).then(() => {
+        // 创建一个answer
+        pc.createAnswer().then((answer) => {
+          // 发送answer到服务器
+          postJson('update', { answer: answer.sdp }).then(res => {
+            if (res.code !== 0) {
+              errorMessage('连接失败:(3)\n[' + res.message + ']')
+            } else {
+              // 设置anwer到本地
+              pc.setLocalDescription(answer)
+            }
+          }).catch(err => {
+              errorMessage('网络错误\n[' + err.message + ']')
+          })
+        })
+        // 启动remote轮询
+        loopFetchRemote()
+      }).catch(err => {
+        errorMessage('连接失败:(4)\n[' + err.message + ']')
+      })
+    }
+
+    function start() {
+      if (!PeerConnection) {
+        errorMessage(isWeixin() ? '哦豁，微信浏览器有点不行，右上角点击使用safari打开' : '哦豁，您的浏览器有点生锈，请更换最新浏览器打开(IOS微信用户)')
+        return false;
+      }
+
+      if (window._CONNECT_TYPE_ === 'WEBRTC') {
+        pageLoading.setText('正在尝试建立webRTC通信..')
+        startConnection()
+      } else {
+        pageLoading.setText('正在尝试建立WebSocket通信..')
+        postJson('update', {
+          upgrade: 1
+        }).then(res => {
+          pageLoading.setText('切换为websocket模式...')
+          new WebsocketConstructor()
+        })
+      }
+    }
+    start()

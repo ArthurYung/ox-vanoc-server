@@ -1,0 +1,99 @@
+script.
+  const baseUrl = window._NODE_ENV === 'prod' ? '/api/v1/' : '/'
+  function setCookie(key, value, expiredays){
+    const exdate = new Date();
+    exdate.setDate(exdate.getDate() + expiredays);
+    document.cookie = key + "=" + escape(value) + ((expiredays==null) ? "" : ";expires=" + exdate.toGMTString());
+  }
+  
+  // 取回cookie
+  function getCookie(key){
+    if(document.cookie.length > 0){
+      c_start = document.cookie.indexOf(key + "=");
+      if(c_start != -1){ 
+          c_start = c_start + key.length + 1; 
+          c_end = document.cookie.indexOf(";", c_start);
+          if(c_end == -1){ 
+            c_end = document.cookie.length;
+          }
+          return unescape(document.cookie.substring(c_start, c_end));
+        } 
+    }
+    return "";
+  }
+
+  function setCurrentConnectType(type) {
+    window._CONNECT_TYPE_ = type
+    if (type === 'WEBRTC') {
+      setCookie('socketConnect', Date.now(), 2)
+    } else {
+       setCookie('socketConnect', window._BASE_UID_, 2)
+    }
+  }
+
+  // 初始化当前连接环境
+  function initConnectType() {
+    getCookie('socketConnect') === window._BASE_UID_ ? setCurrentConnectType('SOCKET') : setCurrentConnectType('WEBRTC')
+  }
+
+  function checkConnectType() {
+    if (getCookie('connectType') !== getNavigatorConnectionType()) {
+      // 网络状况有变动, 直接使用WEBRTC模式
+      setCurrentConnectType('WEBRTC')
+    } else {
+      initConnectType()
+    }
+  }
+
+  function getNavigatorConnectionType() {
+    const ua = navigator.userAgent;
+    let networkStr = ua.match(/NetType\/\w+/) ? ua.match(/NetType\/\w+/)[0] : 'NetType/other';
+    networkStr = networkStr.toLowerCase().replace('nettype/', '');
+    switch (networkStr) {
+        case 'wifi':
+          return 'wifi';
+        case '5g':
+          return '5g';
+        case '4g':
+          return '4g';
+        case '3g':
+            return '3g';
+        case '3gnet':
+            return '3g';
+        case '2g':
+            return '2g';
+        default:
+            return 'other';
+    }
+  }
+
+  // 切换至websocket连接
+  function switchWebsocket() {
+    setCurrentConnectType('SOCKET')
+    setCookie('connectType', getNavigatorConnectionType(), 2)
+  }
+
+  function reloadPage() {
+    window.location.reload()
+  }
+
+  // get请求
+  function getJson (url) {
+    return fetch(baseUrl + url, {
+      headers: new Headers({
+        'Content-Type': 'application/json'
+      }),
+      method: 'GET'
+    }).then(res => res.json())
+  }
+
+  // post请求
+  function postJson (url, data) {
+    return fetch(baseUrl + url, {
+      headers: new Headers({
+        'Content-Type': 'application/json'
+      }),
+      method: 'POST',
+      body: JSON.stringify(data)
+    }).then(res => res.json())
+  }

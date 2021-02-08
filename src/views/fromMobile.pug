@@ -1,0 +1,604 @@
+doctype html
+html
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width,initial-scale=1,user-scalable=0,shrink-to-fit=no")
+    title OX.烦恼客
+    style(type="text/css").
+      body {
+        padding: 0;
+        margin: 0;
+        font-family: Avenir,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
+        font-weight: bolder
+      }
+      .main {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        background: #e8ff09;
+        box-sizing: border-box;
+      }
+      .hide-input {
+        position: fixed;
+        left:-999px;
+        top: 0;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+      }
+      .content {
+        position: fixed;
+        bottom: 52px;
+        left: 50%;
+        transform: translateX(-50%);
+        -webkit-transform: translateX(-50%);
+        padding: 6px 12px;
+        background: #000;
+        color: #fff;
+        width: 300px;
+        max-width: 95vw;
+        display: none;
+      }
+      .active {
+        position: absolute;
+        bottom: 12px;
+        width: 100%;
+        text-align: center;
+      }
+      .active svg {
+        width: 28px;
+        animation: connectAnimate 2s infinite
+      }
+
+      .textarea {
+        display: block;
+        box-sizing: border-box;
+        padding: 4px 10px;
+        width: 92%;
+        margin: 0 auto;
+        font-size: 20px;
+        font-weight: bolder;
+        margin-top: 18px;
+        border: none;
+        border-radius: 4px;
+        background: #fff;
+        height: 140px;
+        border: 1px solid #d1e328;
+      }
+
+      .button {
+        width: 92%;
+        height: 48px;
+        line-height: 48px;
+        border-radius: 4px;
+        font-size: 16px;
+        background-color: #fff;
+        box-shadow: 2px 2px 4px rgba(0, 0, 0, .3);
+        box-sizing: border-box;
+        padding: 0 24px;
+        text-align: center;
+        animation: appendHistory .5s;
+        color: #111;
+        margin: 0 auto;
+        margin-bottom: 6px;
+      }
+      .sub-text {
+        width: 92%;
+        margin: 6px auto;
+        text-align: center;
+        font-size: 18px;
+      }
+      .auto-view:active {
+        background-color: #3b3937;
+      }
+      .auto-view {
+        background-color: #000;
+        color: #fff;
+      }
+      .picture-view:active {
+        background-color: #f5ff96
+      }
+      .picture-view {
+        margin-top: 24px
+      }
+      
+      @keyframes connectAnimate {
+        0% {
+          -webkit-transform: rotate(0);
+          transform: rotate(0);
+        }
+
+        30% {
+          -webkit-transform: rotate(180deg);
+          transform: rotate(180deg);
+        }
+
+        60% {
+          -webkit-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+
+        100% {
+          -webkit-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+    script window._OFFER_SDP_ = `#{offer}`;window._BASE_UID_ = "#{base}";window._NODE_ENV = "#{env}"
+  body
+    main#app.main
+      div#active.active
+        svg(xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20")
+          path(
+            stroke-width="0"
+            d="M0.19437961214869914,4.9223572193117535 L4.964873598924411,0.15186323253616602 L10.032495382626506,5.219443486087077 L15.100117166328737,0.15186323253616602 L19.87065597929942,4.9223572193117535 L14.80303287717972,9.989979003013923 L19.87065597929942,15.057600786716177 L15.100117166328737,19.82813959968683 L10.032495382626506,14.760516497567146 L4.964873598924411,19.82813959968683 L0.19437961214869914,15.057600786716177 L5.26195986569969,9.989979003013923 L0.19437961214869914,4.9223572193117535 z"
+          )
+      div#content.content
+      textarea#textarea.textarea(
+        placeholder="阁下请将文字或图片粘贴至此处，亦可输入文字。"
+      )
+      div#picture.picture-view.button 选择图片
+      div#auto.auto-view.button 文字提取
+      div.sub-text 文字提取：阁下选择一张图片发送至PC，识别图片中文字进行复制。
+      input#pictureTarget.hide-input(type="file" accept="image/*" multiple="true")
+      input#autoTarget.hide-input(type="file" accept="image/*" multiple="true")
+    div#load.page-load
+      div.page-load-content
+        div.icon
+          svg(xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20")
+            path(
+              stroke-width="0"
+              d="M0.19437961214869914,4.9223572193117535 L4.964873598924411,0.15186323253616602 L10.032495382626506,5.219443486087077 L15.100117166328737,0.15186323253616602 L19.87065597929942,4.9223572193117535 L14.80303287717972,9.989979003013923 L19.87065597929942,15.057600786716177 L15.100117166328737,19.82813959968683 L10.032495382626506,14.760516497567146 L4.964873598924411,19.82813959968683 L0.19437961214869914,15.057600786716177 L5.26195986569969,9.989979003013923 L0.19437961214869914,4.9223572193117535 z"
+            )
+        div#load-content.page-load-text 连接中...
+    include ./utils.pug
+    script.
+      initConnectType()
+    script.
+      const apiHost = window._NODE_ENV === 'prod' ? 'vanoc.top' : 'localhost:3008'
+      const $app = document.getElementById('app')
+      const $content = document.getElementById('content')
+      const $active = document.getElementById('active')
+      const $textarea = document.getElementById('textarea')
+
+      const PeerConnection = window.PeerConnection || window.webkitPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection || window.RTCPeerConnection;
+    
+      const nativeRTCIceCandidate =  window.mozRTCIceCandidate ||  window.RTCIceCandidate;
+
+      const options = {
+        iceServers: [
+          {
+            urls: ["stun:stun.internetcalls.com:3478", "stun:stun.voipbuster.com:3478"],
+          }
+        ],
+      };
+
+      // 展示错误信息
+      const errorMessage = (str) => {
+        $app.removeChild($active)
+        $content.innerHTML = str
+        $content.style.display = 'block'
+      }
+
+      // 判断是否是微信（貌似没啥用了）
+      const isWeixin = function () { //判断是否是微信
+          const ua = navigator.userAgent.toLowerCase();
+          return ua.match(/MicroMessenger/i) == "micromessenger";
+      };
+
+
+      const base64ToFile = (dataurl, filename) => {
+        const arr = dataurl.split(',')
+        const mime = arr[0].match(/:(.*?);/)[1]
+        const bstr = atob(arr[1])
+        let n = bstr.length
+        const u8arr = new Uint8Array(n);
+        while(n--){
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new File([u8arr], filename, {type:mime});
+      }
+
+      let remoteCandidates = []
+      let currentConnect
+
+      function peerConnectCreator() {
+        this.pc = null
+        this.dataChannel = null
+        this.connected = false
+        this.heartListenerTimeout = null
+        this.heartInterval = null
+        this.sendQueue = []
+        this.buffers = []
+        this.buffersLength = 0
+        this.remoteCandidates = []
+        this.holder = false
+        this.destroyed = false
+        this.init()
+      }
+
+      peerConnectCreator.prototype.loopFetchRemote = function () {
+        getJson('check').then(res => {
+          if (this.connected || this.destroyed) {
+            return
+          }
+
+          if (res.code !== 0) {
+            errorMessage('连接失败:(1)\n' + res.message)
+            return
+          }
+
+          if (res.data.candidate1) {
+            this.filterIceCandidate(res.data.candidate1)
+          } 
+          
+          setTimeout(() => {
+            this.loopFetchRemote()
+          }, 1000)
+        })
+      }
+
+      peerConnectCreator.prototype.filterIceCandidate = function (candidates) {
+        const usefulIceCandidates = candidates.filter(
+          candidate => !this.remoteCandidates.find(remote => remote.candidate === candidate.candidate)
+        )
+        usefulIceCandidates.forEach(candidate => this.addIceCandidate(candidate))
+        this.remoteCandidates = candidates
+      }
+
+      peerConnectCreator.prototype.addIceCandidate = function (candidate) {
+        //- this.pc.addIceCandidate(new nativeRTCIceCandidate(candidate))
+      }
+      peerConnectCreator.prototype.startHeartListener = function () {
+        // 初始化心跳包监听，5秒无应答做断开处理
+        clearTimeout(this.heartListenerTimeout)
+        this.heartListenerTimeout = setTimeout(() => {
+          errorMessage('<div onclick="reloadPage()">连接已中断, 点击尝试重连</div>')
+        }, 5000)
+      }
+
+      peerConnectCreator.prototype.holderTimeout = function () {
+        this.holder = true
+        this.send('[holder]0')
+        clearTimeout(this.heartListenerTimeout)
+      }
+
+      peerConnectCreator.prototype.dropHolder = function () {
+          this.holder = false
+          this.send('[connect]0')
+      }
+
+      peerConnectCreator.prototype.ondataChannel = function () {
+        this.pc.ondatachannel = (event) => {
+          console.log('on data start')
+          const channel = event.channel;
+          // 数据连接打开时回调
+          channel.onopen = (event) => {
+            this.connected = true
+            this.sendQueue.forEach(content => {
+              channel.send(content)
+            })
+            channel.send('[connect]0');
+            postJson('update', { status: 4 })
+
+            // 数据建立连接后发送心跳包，并更新状态
+            this.heartInterval = setInterval(() => {
+              channel.send('[heart]0')
+            }, 1000)
+          }
+
+          // 接收到数据的回调
+          channel.onmessage = (event) => {
+            console.log(event.data)
+            if (typeof event.data !== 'string' || this.holder) {
+              return
+            }
+
+            const dataParsed = event.data.match(/(\[.+?\])(.+)$/)
+            const type = dataParsed ? dataParsed[1] : ''
+            const content = dataParsed ? dataParsed[2] : ''
+
+            if (type === '[connect]' || type === '[heart]') {
+              this.startHeartListener()
+            }
+
+            if (type === '[info]') {
+              this.sendArrayBuffer()
+            }
+          }
+
+          this.dataChannel = channel
+        }
+      }
+
+      peerConnectCreator.prototype.onIceServer = function () {
+        // 本地发现ice服务器
+        this.pc.onicecandidate = (e) => {
+          console.log('on data', e)
+          if (this.destroyed) return
+          if (e.candidate) {
+            // candidate2: e.candidate
+            postJson('update', {  }).then(res => {
+              if (res.code !== 0) {
+                errorMessage( '连接失败:(2)\n' + res.message)
+                return
+              }
+              clearTimeout(this.switchTimeout)
+              this.switchTimeout = setTimeout(() => {
+                // 5秒后如果还是连接失败，清除当前cookie
+                if (!this.connected) {
+                  console.log(this)
+                  //- getJson('clean')
+                  //- errorMessage('连接失败:(5)\n请重新扫码')
+                  postJson('update', {
+                    upgrade: 1
+                  }).then(res => {
+                    switchWebsocket()
+                    this.destroy()
+                    currentConnect = new WebSocketConnect()
+                  })
+                }
+              }, 5000)
+            }).catch(err => {
+              errorMessage('接口错误:\n' + res.message)
+            })
+          }
+        }
+      }
+
+      peerConnectCreator.prototype.createAnswer = function () {
+        // 创建一个answer
+        this.pc.createAnswer().then((answer) => {
+          // 发送answer到服务器
+          postJson('update', { answer: answer.sdp }).then(res => {
+            if (res.code !== 0) {
+              errorMessage('连接失败:(3)\n[' + res.message + ']')
+            } else {
+              // 设置anwer到本地
+              this.pc.setLocalDescription(answer)
+            }
+          }).catch(err => {
+              errorMessage('网络错误\n[' + err.message + ']')
+          })
+        })
+      }
+
+      peerConnectCreator.prototype.setRemote = function () {
+        // 将服务器中的offer配置设置到远端remote
+        this.pc.setRemoteDescription(new RTCSessionDescription({ 
+          type: 'offer',
+          sdp: window._OFFER_SDP_
+        })).then(() => {
+          this.createAnswer()
+          // 启动remote轮询
+          this.loopFetchRemote()
+        }).catch(err => {
+          errorMessage('连接失败:(4)\n[' + err.message + ']')
+        })
+      }
+
+      peerConnectCreator.prototype.send = function (content) {
+        if (this.connected) {
+          this.dataChannel.send(content)
+        } else {
+          this.sendQueue.push(content)
+        }
+      }
+
+      peerConnectCreator.prototype.sendArrayBuffer = function () {
+        if (this.buffers.length) {
+          this.send(this.buffers.shift())
+        }
+      }
+
+      peerConnectCreator.prototype.sendFragmentArrayBuffer = function (buffers, fileType, sendType) {
+        const currentSendType = sendType || 'buffer'
+        this.buffers = buffers
+        this.buffersLength = buffers.length
+        this.send(`[${currentSendType}]${fileType}:${buffers.length}`)
+        this.sendArrayBuffer()
+      }
+
+      peerConnectCreator.prototype.sendImage = function (file, sendType) {
+        if (file.size > 5 * 1024 * 1024) {
+          alert('图片太大了，老夫扛不住啊')
+          return
+        }
+
+        if (!file.type.startsWith('image')) {
+          alert('只支持图片哦')
+          return
+        }
+        const fragmentSize = 1024 * 8 // 每次send最大只有8kb
+        const fileReader = new FileReader()
+        fileReader.onload = () => {
+          const buffer = fileReader.result
+          const size = buffer.byteLength
+          const partitionLength = Math.abs(size / fragmentSize)
+          const fragments = []
+          for (let i = 0; i < partitionLength; i++) {
+            fragments.push(buffer.slice(i * fragmentSize, (i + 1) * fragmentSize))
+          }
+          this.sendFragmentArrayBuffer(fragments, file.type, sendType)
+        }
+        fileReader.readAsArrayBuffer(file)
+      }
+
+      peerConnectCreator.prototype.sendText = function (text) {
+        this.send('[text]' + text.replace(/\n/g, '\\n'))
+      }
+
+      peerConnectCreator.prototype.init = function () {
+        this.pc = new RTCPeerConnection(options);
+        this.ondataChannel()
+        this.onIceServer()
+        this.setRemote()
+      }
+
+      peerConnectCreator.prototype.destroy = function() {
+        this.connected = false
+        this.destroyed = true
+        this.pc && this.pc.close()
+        this.dataChannel && this.dataChannel.close()
+        clearTimeout(this.heartListenerTimeout)
+        clearInterval(this.heartInterval)
+      }
+
+
+      function WebSocketConnect () {
+        this.ws = null
+        this.connected = false
+        this.buffers = []
+        this.buffersLength = 0
+        this.init()
+      }
+
+      WebSocketConnect.prototype.send = function (content) {
+        if (this.connected) {
+          this.ws.send(content)
+        }
+      }
+      WebSocketConnect.prototype.holderTimeout = function () {}
+      WebSocketConnect.prototype.dropHolder = function () {}
+      WebSocketConnect.prototype.sendArrayBuffer = peerConnectCreator.prototype.sendArrayBuffer
+      WebSocketConnect.prototype.sendFragmentArrayBuffer = peerConnectCreator.prototype.sendFragmentArrayBuffer
+      WebSocketConnect.prototype.sendCompressImage = peerConnectCreator.prototype.sendImage
+      WebSocketConnect.prototype.sendText = peerConnectCreator.prototype.sendText
+      WebSocketConnect.prototype.sendImage = function (file, type) {
+        if (!file.type.startsWith('image')) {
+          alert('只支持图片哦')
+          return
+        }
+        const reader = new FileReader()
+        const compress = Math.max(0.3, 0.92 - file.size / (8 * 1024 * 1024))
+        reader.onload = () => {
+          const img = new Image()
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+          img.onload = () => {
+            canvas.width = img.width
+            canvas.height = img.height
+            ctx.drawImage(img, 0, 0)
+
+            // canvas压缩只支持有损图片格式 image/jpeg
+            const compressDataUrl = canvas.toDataURL('image/jpeg', compress)
+            const compressFile = base64ToFile(compressDataUrl, file.name)
+            console.log(compressFile, type)
+            this.sendCompressImage(compressFile, type)
+          }
+
+          img.src = reader.result
+        }
+        reader.readAsDataURL(file)
+      }
+
+      WebSocketConnect.prototype.init = function () {
+        console.log('init socket')
+        this.ws = new WebSocket('ws://' + apiHost + '/ws/?uid=' + window._BASE_UID_ + '&type=mobile')
+        this.ws.onopen = () => {
+          this.connected = true
+          this.ws.binaryType = 'arraybuffer'
+          this.ws.send('[connected]1')
+        }
+
+        this.ws.onmessage = (event) => {
+            console.log(event.data)
+            if (typeof event.data !== 'string' || this.holder) {
+              return
+            }
+
+            const dataParsed = event.data.match(/(\[.+?\])(.+)$/)
+            const type = dataParsed ? dataParsed[1] : ''
+            const content = dataParsed ? dataParsed[2] : ''
+
+            if (type === '[connect]') {
+              this.ws.send('[connect]2')
+            }
+
+            if (type === '[info]') {
+              this.sendArrayBuffer()
+            }
+        }
+
+        this.ws.onclose = (e) => {
+          errorMessage('连接已断开')
+        }
+
+        this.ws.onerror = (e) => {
+          console.log('connect error', e)
+        }
+      }
+
+      
+
+      // 给element绑定事件
+      function bindElementEvent () {
+        $textarea.addEventListener('paste', (e) => {
+          const file = e.clipboardData.files[0]
+          const text = e.clipboardData.getData('text/plain')
+          if (file) {
+            currentConnect.sendImage(file)
+          }
+
+          if (text) {
+            currentConnect.sendText(text)
+          }
+          e.preventDefault()
+        })
+
+        $textarea.addEventListener('blur', () => {
+          currentConnect.sendText($textarea.value)
+        })
+
+        const $p = document.getElementById('picture')
+        const $pt = document.getElementById('pictureTarget')
+
+        const $a = document.getElementById('auto')
+        const $at = document.getElementById('autoTarget')
+
+        $p.addEventListener('click', () => {
+          currentConnect.holderTimeout()
+          $pt.click()
+        })
+
+        $a.addEventListener('click', () => {
+          currentConnect.holderTimeout()
+          $at.click()
+        })
+
+        $pt.addEventListener('change', (e) => {
+          if (e.target.files.length) {
+            currentConnect.dropHolder()
+            currentConnect.sendImage(e.target.files[0])
+          }
+        })
+
+        $at.addEventListener('change', (e) => {
+          if (e.target.files.length) {
+            currentConnect.dropHolder()
+            currentConnect.sendImage(e.target.files[0], 'district')
+          }
+        })
+
+        document.body.addEventListener('touchstart', () => {
+          if (currentPeer.holder) {
+            currentConnect.dropHolder()
+          }
+        })
+
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'hidden') {
+            currentConnect.holderTimeout()
+          } else if (document.visibilityState === 'visible') {
+            currentConnect.dropHolder()
+          }
+        })
+      }
+
+      if (!PeerConnection) {
+        errorMessage(isWeixin() ? '哦豁，微信浏览器有点不行，右上角点击使用safari打开' : '哦豁，您的浏览器有点生锈，请更换最新浏览器打开(IOS微信用户)')
+      } else {
+        currentConnect = new peerConnectCreator()
+        bindElementEvent()
+      }

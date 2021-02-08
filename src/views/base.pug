@@ -1,0 +1,157 @@
+doctype html
+html
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width,initial-scale=1,user-scalable=0,shrink-to-fit=no")
+    title OX.烦恼客
+    style(type="text/css").
+      body {
+        padding: 0;
+        margin: 0;
+        font-family: Avenir,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;
+        font-weight: bolder;
+        background: #000;
+      }
+      .main {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        background: #e8ff09;
+        overflow-y: auto;
+      }
+      .content {
+        position: fixed;
+        top: 40%;
+        left: 50%;
+        transform: translateX(-50%);
+        -webkit-transform: translateX(-50%);
+        padding: 6px 12px;
+        background: #000;
+        color: #fff;
+        width: 300px;
+        max-width: 95vw;
+        display: none;
+      }
+      .active {
+        position: fixed;
+        bottom: 12px;
+        width: 100%;
+        text-align: center;
+      }
+      .active svg {
+        width: 28px;
+      }
+      .page-load {
+        z-index: 100;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #1a1a1a;
+        transition: all .5s ease-out;
+      }
+      .page-load-content {
+        background: #e8ff09;
+        position: fixed;
+        top: 5vw;
+        left: 5vw;
+        right: 5vw;
+        bottom: 5vw;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: all .15s ease-out;
+      }
+      .page-load-content .icon {
+        text-align: center
+      }
+      .page-load-content .icon svg {
+        width: 100px;
+      }
+      .page-load-content .page-load-text {
+        text-align: center;
+        margin-top: 20px;
+      }
+    block styles
+    script window._OFFER_SDP_ = `#{offer}`;window._BASE_UID_ = "#{base}"; window._NODE_ENV = "#{env}"
+    if env !== 'prod'
+      script(src="https://cdn.bootcdn.net/ajax/libs/vConsole/3.3.4/vconsole.min.js")
+      script.
+        var vConsole = new VConsole();
+  body
+    main#app.main
+      div#active.active.icon
+        block icon
+      div#content.content
+      block main
+    div#load.page-load
+      div#load-content.page-load-content
+        div
+          div.icon
+            block icon
+          div#load-text.page-load-text 连接中...
+    include ./utils.pug
+    script.
+      checkConnectType()
+    script.
+      const apiHost = window._NODE_ENV === 'prod' ? 'ox.vanoc.top' : 'localhost:3008'
+      const $app = document.getElementById('app')
+      const $content = document.getElementById('content')
+      const $active = document.getElementById('active')
+
+
+      const PeerConnection = window.PeerConnection || window.webkitPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection || window.RTCPeerConnection;
+    
+      const nativeRTCIceCandidate =  window.mozRTCIceCandidate ||  window.RTCIceCandidate;
+  
+      const options = {
+        sdpSemantics: 'unified-plan', //newer implementation of WebRTC,
+        iceServers: [
+          {
+            urls: ["stun:stun.internetcalls.com:3478", "stun:stun.voipbuster.com:3478"],
+          },
+        ],
+      };
+
+      // 展示错误信息
+      const errorMessage = (str) => {
+        $app.removeChild($active)
+        $content.innerHTML = str
+        $content.style.display = 'block'
+      }
+
+      function PageLoading() {
+        this.text = '连接中...'
+        this.$load = document.getElementById('load')
+        this.$loadContent = document.getElementById('load-content')
+        this.$loadText = document.getElementById('load-text')
+      }
+
+      PageLoading.prototype.setText = function (text) {
+        this.text = text
+        this.$loadText.innerText = this.text
+      }
+
+      PageLoading.prototype.done = function () {
+        requestAnimationFrame(() => {
+          this.$loadContent.style.top = 0
+          this.$loadContent.style.left = 0
+          this.$loadContent.style.right = 0
+          this.$loadContent.style.bottom = 0
+          setTimeout(() => {
+            this.$load.style.opacity = 0
+            this.$load.style.transform = 'scale(0)'
+            this.$loadText.style.opacity = 0
+            setTimeout(() => {
+              document.body.removeChild(this.$load)
+            }, 160)
+            //- document.body.removeChild(this.$load)
+          }, 500)
+        })
+      }
+
+      const pageLoading = new PageLoading()
+    block scripts
