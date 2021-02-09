@@ -484,13 +484,14 @@ block scripts
 
         // 接收到数据的回调
         channel.onmessage = function(event) {
+          console.log(event.data)
           if (event.data instanceof ArrayBuffer) {
             putImageBuffer(event.data)
             channel.send('[info]0')
             return
           }
 
-          const dataParsed = event.data.match(/(\[.+?\])(.+)$/)
+          const dataParsed = event.data.match(/(\[.+?\])(.+)$/m)
           const type = dataParsed ? dataParsed[1] : ''
           const content = dataParsed ? dataParsed[2] : ''
 
@@ -555,7 +556,7 @@ block scripts
                   new WebsocketConstructor()
                 })
               }
-            }, 10000)
+            }, 6000)
           }).catch(err => {
             errorMessage('接口错误:\n' + res.message)
           })

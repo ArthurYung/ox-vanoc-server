@@ -81,6 +81,15 @@ html
       script(src="https://cdn.bootcdn.net/ajax/libs/vConsole/3.3.4/vconsole.min.js")
       script.
         var vConsole = new VConsole();
+    if env === 'prod'
+      script.
+        var _hmt = _hmt || [];
+        (function() {
+          var hm = document.createElement("script");
+          hm.src = "https://hm.baidu.com/hm.js?7035cb48ee1b19ae62efe2e2717f99f4";
+          var s = document.getElementsByTagName("script")[0]; 
+          s.parentNode.insertBefore(hm, s);
+        })();
   body
     main#app.main
       div#active.active.icon

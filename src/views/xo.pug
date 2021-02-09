@@ -320,9 +320,6 @@ block scripts
             this.switchTimeout = setTimeout(() => {
               // 5秒后如果还是连接失败，清除当前cookie
               if (!this.connected) {
-                //- console.log(this)
-                //- getJson('clean')
-                //- errorMessage('连接失败:(5)\n请重新扫码')
                 postJson('update', {
                   upgrade: 1
                 }).then(res => {
@@ -332,7 +329,7 @@ block scripts
                   currentConnect = new WebSocketConnect()
                 })
               }
-            }, 10000)
+            }, 6000)
           }).catch(err => {
             errorMessage('接口错误:\n' + res.message)
           })
