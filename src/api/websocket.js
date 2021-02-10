@@ -27,9 +27,9 @@ const hasConnectedRoom = (uid) => {
 }
 
 const sendMessage = (uid, type, content) => {
-  const socketRoom = socketRoomMap.get(uid)
-  const action = type === 'client' ? socketRoom.mobile : socketRoom.client
   try {
+    const socketRoom = socketRoomMap.get(uid)
+    const action = type === 'client' ? socketRoom.mobile : socketRoom.client
     action.send(content)
   } catch (e) {
     console.warn('send error:', e)
