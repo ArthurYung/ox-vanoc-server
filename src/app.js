@@ -15,7 +15,13 @@ if (process.env.NODE_ENV === 'dev') {
     origin: 'http://localhost:3000',
     credentials: true
   }))
+} else {
+  app.use(cors({
+    origin: 'https://ox.bruceau.plus',
+    credentials: true
+  }))
 }
+
 
 app.use(views(path.resolve(__dirname, 'views'), {
   extension: 'pug'
