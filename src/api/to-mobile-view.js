@@ -12,7 +12,7 @@ module.exports = async (ctx) => {
     ctx.res.write('二维码已过期，请重试')
     ctx.res.end()
   } else {
-    ctx.cookies.set(names.CLIENT_UID_NAME, uid, { httpOnly: true })
+    ctx.cookies.set(names.CLIENT_UID_NAME, uid, { httpOnly: true, domain: '.bruceau.plus' })
     await ctx.render('ox', {...offer, base: uid, env: process.env.NODE_ENV })
   }
 }
